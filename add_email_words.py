@@ -129,6 +129,9 @@ from parse_email_text import parseOutText
 
 
 def add_words(data_dict, n=30):
+    
+        if n < 2: ## make sure that n is at least 2 so we don't get an error
+                n = 2
 	
 	os.chdir('./emails_by_address') # change back directory at end of function
 
@@ -155,7 +158,7 @@ def add_words(data_dict, n=30):
                                                 email_limit_counter += 1
                                                 
                                                 start_idx = email_path.find('/') ## email paths are not correct as is
-                                                # note the path below is different for the GitHub project folder
+                                                # note the path below is different for the GitHub project folder; '../../' for local or '../' for GitHub
                                                 actual_email_path = '../' + email_path[start_idx + 1: -2] ## -2 because we have a period on the end of the file name
                                                 
                                                 if email_limit_counter < n: ## the limit of how many emails to process per person
@@ -176,8 +179,11 @@ def add_words(data_dict, n=30):
                                 print path, " does not exist in 'emails_by_address' for: ", person
 						
 		
-			word_string = ' '.join(word_data)
-			data_dict[person]['words'] = word_string
+                        if word_data:  ## check if we have word data at all, paths and/or emails could have been deleted somehow in maildir...
+                                word_string = ' '.join(word_data)
+                                data_dict[person]['words'] = word_string
+                        else:
+                                data_dict[person]['words'] = ''
 			
 
 		else: ## for people with no email address or no email data
