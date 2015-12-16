@@ -50,15 +50,15 @@ data_dict = pickle.load(open("final_project_dataset.pkl", "r") )
 import pandas as pd
 import numpy as np
 df = pd.DataFrame.from_dict(data_dict, orient = 'index')
-#print df.total_payments.isnull().any() ## our NaN values are actually strings
+#print df.isnull().any() ## our NaN values are actually strings
 ## we can replace string NaNs with 0 or actual NaN
 #df = df.replace('NaN', 0)
 df = df.replace('NaN', np.nan) ## np.nan works better for data summary stats and plotting
 
 
 ### Data Summary
-print df.info()
-print df.describe()
+print "\n", df.info()
+print "\n", df.describe()
 
 
 ### Visual Inspection/Removal of Outliers
@@ -93,7 +93,6 @@ for person in no_data:
     
 ## from looking at the enron insider pay pdf file
 df.drop('THE TRAVEL AGENCY IN THE PARK')
-
 
 
 ### Convert DF Back to Dictionary
@@ -135,7 +134,7 @@ for person in data_dict:
         num = data_dict[person][word]
         if num > 0:
             print poi, person, word, num 
-'''            
+'''
 
 
 ### Updating Features List
@@ -143,18 +142,37 @@ word_features = impt_words
 #preliminary_features = preliminary_features + word_features ## word_features did not improve predictions but complicated feature selection algorithms
 
 
+
 ### Task 3.1: Selecting Best Features
-## NORMALLY OUT OF THE BOX SKLEARN FEATURE SELECTION IS DONE IN A PIPELINE
-## HOWEVER THIS FUNCTION USES SEVERAL FEATURE SELECTION METHODS TOGETHER
+# THIS IS IMPLEMENTED HERE AS IT CANNOT BE DONE IN A PIPELINE
+
+## Updating features list based upon available data
+df = df.transpose()[features_list] ## using same pandas data frame from the outlier removal section
+df = df.replace('NaN', np.nan)
+print "\n", df[df.poi == True].info() ## non-null counts for POIs
+feature_data = [] ## list of important features by number of non-null values
+alpha = 1.0* sum(df.poi == True) / sum(df.poi != True) ## weighting POIs by their proportion in the data set
+for ftr in list(df.columns.values):
+    if ftr not in ['poi']:
+        n_poi = sum( df[df.poi == True][ftr].notnull() )
+        n_non_poi = sum( df[df.poi != True][ftr].notnull() )
+        feature_data.append([ftr, (n_poi + alpha*n_non_poi)])
+        
+feature_data = sorted(feature_data, key=lambda x: x[1], reverse = True)
+features_list = [ftr[0] for ftr in feature_data[0:8]] + ['poi'] ## take top 8 and add back POI
+
+## Selecting best features based upon several selection methods
 from feature_selector import select_best
-updated_features = select_best(data_dict, preliminary_features, 6)
+updated_features = select_best(data_dict, features_list, 5)
+
 
 
 ### Store to my_dataset for easy export below.
 my_dataset = data_dict
-#features_list = ['poi'] + updated_features ## features selected using k-best, recursive feature elimination, and tree based classifiers
-## manual selection
-features_list = ['poi'] + ['bonus', 'exercised_stock_options', 'restricted_stock', 'total_stock_value']
+features_list = ['poi'] + updated_features ## features selected using k-best, recursive feature elimination, and tree based classifiers
+## manual pruning from worst correlated features and rankings...
+features_list.remove('expenses')
+#features_list.remove('exercised_stock_options')
 print "\nFinal Features Used: ", features_list, "\n"
 
 
@@ -182,7 +200,7 @@ from sklearn.ensemble import AdaBoostClassifier
 #clf = AdaBoostClassifier()
 from sklearn.neighbors import KNeighborsClassifier
 #clf = KNeighborsClassifier()
-from sklearn.cluster import KMeans ## Todo...
+from sklearn.cluster import KMeans ## To do...
 #clf = KMeans(n_clusters=2)
 
 
@@ -210,10 +228,10 @@ from sklearn.cross_validation import StratifiedShuffleSplit
 features_train, features_test, labels_train, labels_test = \
     train_test_split(features, labels, test_size=0.3, random_state=42)
 
-## scaler, pca, adaboost
+## standard scaler, pca, adaboost
 '''parameters = dict(ada__base_estimator = [DecisionTreeClassifier(), DecisionTreeClassifier(max_depth = 5), DecisionTreeClassifier(max_depth = 8)],
                 ada__learning_rate = [1.0, 5.0, 10.0, 20.0])'''
-## scaler, knn
+## min-max scaler, knn
 parameters = dict(knn__n_neighbors = range(1, 6), knn__weights = ['uniform', 'distance'])
 
 sss = StratifiedShuffleSplit(labels_train, random_state = 11) ## best cross-validation method for small data set and few POIs
