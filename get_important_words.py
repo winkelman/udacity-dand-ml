@@ -49,7 +49,7 @@ def get_words(data_dict):
 	clf = DecisionTreeClassifier()
 	clf = clf.fit(features_train_transformed, labels_train)
 	acc = clf.score(features_test_transformed, labels_test)
-	print "Accuracy of word-based DT classifier on test data is: ", acc
+	print "\nAccuracy of word-based DT classifier on test data is: ", acc
 
 
 	## extracting important features/words from DT classifier
