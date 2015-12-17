@@ -36,8 +36,7 @@ def parseOutText(f):
         words = ' '.join(stemmed_words_list)
         
         ### removing problematic words found later in the DT classifier (words of importance in predicting POIs)
-        remove = ['shellyjonesenroncom', 'sherrickcorpenronenron', 'elliot', 'janic', 'raptor', 'evanslegallonectect', 'everyoneeogdenv', 
-        'mckeevereuenronenron', 'shankmanhouectenron', 'mintzenronenronxgateenron', 'mm', 'calgerpdxectect', 'shermanenronenronxgateenron']
+        remove = [u'catalytica', u'kennethpst', u'fernandez', u'elliot', u'ppas']
         for bad_word in remove:
             words = words.replace(bad_word, "")
 
