@@ -3,10 +3,11 @@
 
 import sys
 import pickle
-sys.path.append("./tools/")
+sys.path.append("./tools/") #GitHub path is different
 
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
+
 
 
 
@@ -18,21 +19,16 @@ from tester import dump_classifier_and_data
 financial_features = ['salary', 'deferral_payments', 'total_payments',
 'loan_advances', 'bonus', 'restricted_stock_deferred', 'deferred_income',
 'total_stock_value', 'expenses', 'exercised_stock_options', 'other',
-'long_term_incentive', 'restricted_stock', 'director_fees']
-## all units are in US dollars
+'long_term_incentive', 'restricted_stock', 'director_fees'] ## all units are in US dollars
 
-email_features = ['to_messages', 'from_poi_to_this_person',
-'from_messages', 'from_this_person_to_poi', 'shared_receipt_with_poi']
-## units are number of email messages
-## 'email_address', a text string, is not included
+email_features = ['to_messages', 'from_poi_to_this_person', 'email_address',
+'from_messages', 'from_this_person_to_poi', 'shared_receipt_with_poi'] ## units are number of email messages, 'email_address' is a string
 
 poi_label = ['poi'] ## boolean
 
 preliminary_features = poi_label + financial_features #+ email_features ## email_features excluded because of data leakage
 
-## features_list is a list of strings, each of which is a feature name.
-## the first feature must be "poi".
-features_list = list(preliminary_features)
+features_list = list(preliminary_features) ## features_list is a list of strings, the first feature must be "poi"
 
 
 ### Load the dictionary containing the dataset
@@ -88,6 +84,7 @@ out2name = df['total_payments'].idxmax()
 ## remove people with essentially no data (no total_payments and no total_stock_value)
 no_data = df[np.isnan(df.total_payments) & np.isnan(df.total_stock_value)].index.values.tolist()
 print "\nPeople with no data removed from dataset: ", no_data, "\n"
+
 for person in no_data:
     df.drop(person)
     
@@ -110,12 +107,17 @@ data_dict = df.to_dict()
 ### Task 3: Create new feature(s)
 
 ### Creating Suspicious Words Features
+
+## adding email text data for each person
 from add_email_words import add_words ## adds all email text data as one string for each person in data_dict[person]['words']
-data_dict = add_words(data_dict, n=2) ## n is number of emails per person, default is 30, must be 2 or greater
+data_dict = add_words(data_dict, all=False, n=20) ## 'all' to process entire email corpus, n is number of emails per person, default is 30
 
 ## getting list of suspicious words
 from get_important_words import get_words
 impt_words = get_words(data_dict)
+if u'boardroom' not in impt_words: ## have to add 1 critically important word manually, the DT classifier doesn't always find it for some reason...?
+    impt_words.append(u'boardroom')
+    
 print "Suspicious words are: ", impt_words
 
 ## add count of each suspicious word for all persons to dictionary in data_dict[person]['a_suspicious_word_here']
@@ -136,49 +138,67 @@ for person in data_dict:
             print poi, person, word, num 
 '''
 
+word_features = impt_words ## rename
 
-### Updating Features List
-word_features = impt_words
-#preliminary_features = preliminary_features + word_features ## word_features did not improve predictions but complicated feature selection algorithms
+
+
+
 
 
 
 ### Task 3.1: Selecting Best Features
 # THIS IS IMPLEMENTED HERE AS IT CANNOT BE DONE IN A PIPELINE
 
-## Updating features list based upon available data
+### Pruning financial features list based upon those with most data, word features not included here as they have data for all persons
 df = df.transpose()[features_list] ## using same pandas data frame from the outlier removal section
 df = df.replace('NaN', np.nan)
-print "\n", df[df.poi == True].info() ## non-null counts for POIs
-feature_data = [] ## list of important features by number of non-null values
-alpha = 1.0* sum(df.poi != True) / sum(df.poi == True) #/ sum(df.poi != True) ## weighting POIs by their proportion in the data set
+
+## non-null counts for POIs
+print "\n", df[df.poi == True].info()
+
+## creating list of important features by number of non-null values
+feature_data = []
+alpha = 1.0* sum(df.poi != True) / sum(df.poi == True) ## weighting POIs by their proportion in the data set
+
 for ftr in list(df.columns.values):
     if ftr not in ['poi']:
         n_poi = sum( df[df.poi == True][ftr].notnull() )
         n_non_poi = sum( df[df.poi != True][ftr].notnull() )
-        feature_data.append([ftr, (n_poi + alpha*n_non_poi)])
+        feature_data.append([ftr, (alpha*n_poi + n_non_poi)])
         
 feature_data = sorted(feature_data, key=lambda x: x[1], reverse = True)
 features_list = [ftr[0] for ftr in feature_data[0:8]] + ['poi'] ## take top 8 and add back POI
-print "\nTrimming features to include top 8 with most data: ", features_list[:-1] ## excluse POI in the printed list
+    
+print "\nTop 8 features to include with most data: ", features_list[:-1] ## exclude POI in the printed list
 print "Excluding these features because of limited data: ", [ftr for ftr in list(df.columns.values) if ftr not in features_list]
 
-## Selecting best features based upon several selection methods
+
+### Adding word features after financial feature pruning
+features_list = features_list + word_features
+
+
+### Selecting best features based upon several selection methods
 from feature_selector import select_best
 updated_features = select_best(data_dict, features_list, 5)
 
 
+### Manual pruning from worst correlated features and rankings.  Also adding u'boardroom feature,
+## even if word classifier finds it, it doesn't always get included by select_best when other text features are present (u'raptor for example) 
+if 'expenses' in updated_features:
+    updated_features.remove('expenses')
+if 'salary' in updated_features:
+    updated_features.remove('salary')
+if 'total_payments' in updated_features:
+    updated_features.remove('total_payments')
+if u'boardroom' not in updated_features:
+    updated_features.append(u'boardroom')
+
+print "\nFinal Features Used: ", updated_features, "\n"
+
 
 ### Store to my_dataset for easy export below.
 my_dataset = data_dict
-features_list = ['poi'] + updated_features ## features selected using k-best, recursive feature elimination, and tree based classifiers
-## manual pruning from worst correlated features and rankings...
-if 'expenses' in features_list:
-    features_list.remove('expenses')
-if 'salary' in features_list:
-    features_list.remove('salary')
-#features_list.remove('exercised_stock_options')
-print "\nFinal Features Used: ", features_list, "\n"
+features_list = ['poi'] + updated_features
 
 
 ### Extract features and labels from dataset for local testing
@@ -218,11 +238,9 @@ from sklearn.decomposition import PCA
 estimators = [('scaler', MinMaxScaler()), ('knn',  KNeighborsClassifier())] ## KNN requires range scaling but PCA offers no benefit
 
 
-
 ### Classifier Selection
 #clf = GaussianNB()  ## this is the benchmark 
 clf = Pipeline(estimators)
-
 
 
 ### Parameter Optimization
@@ -308,7 +326,6 @@ for train_idx, test_idx in sss:
 
 ## not quite the same as tester.py
 print "\nAccuracy: ", sum(accuracy)/folds, "\nPrecision: ", sum(precision)/folds, "\nRecall: ", sum(recall)/folds, "\nF1-Score: ", sum(f_one)/folds
-
 
 ## using sklearn
 from sklearn.metrics import classification_report
