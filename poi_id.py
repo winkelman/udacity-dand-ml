@@ -151,7 +151,7 @@ df = df.transpose()[features_list] ## using same pandas data frame from the outl
 df = df.replace('NaN', np.nan)
 print "\n", df[df.poi == True].info() ## non-null counts for POIs
 feature_data = [] ## list of important features by number of non-null values
-alpha = 1.0* sum(df.poi == True) / sum(df.poi != True) ## weighting POIs by their proportion in the data set
+alpha = 1.0* sum(df.poi != True) / sum(df.poi == True) #/ sum(df.poi != True) ## weighting POIs by their proportion in the data set
 for ftr in list(df.columns.values):
     if ftr not in ['poi']:
         n_poi = sum( df[df.poi == True][ftr].notnull() )
@@ -160,6 +160,8 @@ for ftr in list(df.columns.values):
         
 feature_data = sorted(feature_data, key=lambda x: x[1], reverse = True)
 features_list = [ftr[0] for ftr in feature_data[0:8]] + ['poi'] ## take top 8 and add back POI
+print "\nTrimming features to include top 8 with most data: ", features_list[:-1] ## excluse POI in the printed list
+print "Excluding these features because of limited data: ", [ftr for ftr in list(df.columns.values) if ftr not in features_list]
 
 ## Selecting best features based upon several selection methods
 from feature_selector import select_best
@@ -171,7 +173,10 @@ updated_features = select_best(data_dict, features_list, 5)
 my_dataset = data_dict
 features_list = ['poi'] + updated_features ## features selected using k-best, recursive feature elimination, and tree based classifiers
 ## manual pruning from worst correlated features and rankings...
-features_list.remove('expenses')
+if 'expenses' in features_list:
+    features_list.remove('expenses')
+if 'salary' in features_list:
+    features_list.remove('salary')
 #features_list.remove('exercised_stock_options')
 print "\nFinal Features Used: ", features_list, "\n"
 
@@ -290,7 +295,7 @@ for train_idx, test_idx in sss:
     #acc = clf.score(features_test, labels_test)
     acc = accuracy_score(labels_test, pred)
     pre = precision_score(labels_test, pred)
-    rec = precision_score(labels_test, pred)
+    rec = recall_score(labels_test, pred)
     f1 = f1_score(labels_test, pred)
     
     accuracy.append(acc)
@@ -308,7 +313,7 @@ print "\nAccuracy: ", sum(accuracy)/folds, "\nPrecision: ", sum(precision)/folds
 ## using sklearn
 from sklearn.metrics import classification_report
 ## precision, recall, f1-score, and support (number of occurrences in test set)
-print "\n", classification_report(total_labels, total_preds, target_names=['non-POI', 'POI']) ## this values are much different...
+print "\n", classification_report(total_labels, total_preds, target_names=['non-POI', 'POI']) ## these scores appear to be less accurate...
 
 
 
