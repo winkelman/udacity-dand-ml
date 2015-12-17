@@ -128,7 +128,12 @@ def audit_emails():
 from parse_email_text import parseOutText
 
 
-def add_words(data_dict, n=30):
+def add_words(data_dict, all=False, n=30):
+    
+        if all == True:
+            num_eml = 0
+        else:
+            num_eml = 1
     
         if n < 2: ## make sure that n is at least 2 so we don't get an error
                 n = 2
@@ -151,11 +156,11 @@ def add_words(data_dict, n=30):
 			
                                 with open(path, 'rb') as file_dir:  ## path is actually a text file containing multiple email text file paths for each person
                                         
-                                        email_limit_counter = 0 ## this allows us to control how many emails to process per person
+                                        email_limit_counter = 0 ## this allows us to set a limit for how many emails to process per person
                                         
                                         for email_path in file_dir:
                                                 
-                                                email_limit_counter += 1
+                                                email_limit_counter += num_eml ## control whether or not to process entire corpus; if all = True then 0, if all = False then 1
                                                 
                                                 start_idx = email_path.find('/') ## email paths are not correct as is
                                                 # note the path below is different for the GitHub project folder; '../../' for local or '../' for GitHub
