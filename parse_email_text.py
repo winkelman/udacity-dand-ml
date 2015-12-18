@@ -5,7 +5,7 @@ from nltk.corpus import stopwords
 import string
 import re
 
-digit = re.compile('\d+') ## to id words contaning numbers
+digit = re.compile('\d+') ## to exclude id words contaning numbers
 
 def parseOutText(f):
     """ given an opened email file f, parse out all text below the
