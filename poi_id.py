@@ -3,7 +3,7 @@
 
 import sys
 import pickle
-sys.path.append("./tools/") #GitHub path is different
+sys.path.append("./tools/") # DIFFERENT GITHUB PATH HERE
 
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
@@ -14,7 +14,7 @@ from tester import dump_classifier_and_data
 
 
 
-### Task 1: Select what features you'll use.
+### Task 1: Preliminary Feature Selection
 
 financial_features = ['salary', 'deferral_payments', 'total_payments',
 'loan_advances', 'bonus', 'restricted_stock_deferred', 'deferred_income',
@@ -26,9 +26,10 @@ email_features = ['to_messages', 'from_poi_to_this_person', 'email_address',
 
 poi_label = ['poi'] ## boolean
 
-preliminary_features = poi_label + financial_features #+ email_features ## email_features excluded because of data leakage
+email_features.remove('email_address') ## not numerical
 
-features_list = list(preliminary_features) ## features_list is a list of strings, the first feature must be "poi"
+## features_list is a list of strings, the first feature must be "poi".
+features_list = poi_label + financial_features #+ email_features ## email_features excluded because of data leakage
 
 
 ### Load the dictionary containing the dataset
@@ -40,88 +41,147 @@ data_dict = pickle.load(open("final_project_dataset.pkl", "r") )
 
 
 
-### Task 2: Remove outliers (not enough data for 10% rule)
+### Task 2: Data Exploration and Outlier Removal (not enough data for 10% rule)
 
 ### Create Pandas Dataframe
 import pandas as pd
 import numpy as np
 df = pd.DataFrame.from_dict(data_dict, orient = 'index')
 #print df.isnull().any() ## our NaN values are actually strings
-## we can replace string NaNs with 0 or actual NaN
+## we can replace string NaNs with 0 or real NaN
 #df = df.replace('NaN', 0)
 df = df.replace('NaN', np.nan) ## np.nan works better for data summary stats and plotting
 
 
 ### Data Summary
-print "\n", df.info()
-print "\n", df.describe()
+print "\n\nData Inspection:\n\n", df.info()
+print "\n\n\nData Summary:\n\n", df.describe()
+
+## non-null counts for POIs
+print "\n\n\nPOI Data Inspection:\n\n", df[df.poi == True].info()
 
 
 ### Visual Inspection/Removal of Outliers
+
+## from looking at the enron insiderpay.pdf file
+print "\n\nFirst outlier removed is: 'THE TRAVEL AGENCY IN THE PARK'"
+df = df.drop('THE TRAVEL AGENCY IN THE PARK')
+#data_dict.pop('THE TRAVEL AGENCY IN THE PARK') ## not necessary here, can convert back to dict later
+
 import seaborn as sns
 ## if NaN strings are kept, we need to create a new df that screens these values for the plot
 #df_plt = df[(df.total_payments != "NaN") & (df.total_stock_value != "NaN")]
 
 ## the pair plot below would be ideal (incorrect syntax) to detect outliers among features...
 #sns.pairplot(df, x_vars=['total_stock_value', 'total_payments'], y_vars=['total_stock_value', 'total_payments'], kind="scatter", dropna=True)
-## instead of pair plot (cannot render), using 'total_payments' and 'total_stock_value' featuers to detect outliers
+## instead of pair plot (cannot render), using 'total_payments' and 'total_stock_value' features to detect outliers
 sns.jointplot(x="total_payments", y="total_stock_value", data=df, dropna=True)
 sns.plt.show()
 
-## this plot shows one clear outlier which we also found in lesson 7, 'TOTAL'
-#data_dict.pop('TOTAL') ## not necessary, can convert df to dict when finished
+## the plot shows one clear outlier which we also found in lesson 7, 'TOTAL'
+out2name = df['total_payments'].idxmax()
+print "\nSecond outlier removed is:", out2name 
 df = df.drop('TOTAL')
+#data_dict.pop('TOTAL') ## again, not necessary here
 
-## any more outliers?
+## check if any more outliers
 sns.jointplot(x="total_payments", y="total_stock_value", data=df, dropna=True)
 sns.plt.show()  ## one more clear outlier
 
 ## second outlier, 'LAY KENNETH L'
-out2name = df['total_payments'].idxmax()
-#data_dict.pop(out2name) ## again, not necessary here
-#df = df.drop(out2name) ## we have too few POIs/data to remove this anyway
+out3name = df['total_payments'].idxmax()
+print "\nThird outlier NOT removed is:", out3name
+#data_dict.pop(out3name) ## again, not necessary here
+#df = df.drop(out3name) ## we have too few POIs/data to remove this anyway
 
-## remove people with essentially no data (no total_payments and no total_stock_value)
+## remove people(s) with no financial data
+no_data = df[df[financial_features].isnull().all(axis = 1)].index.values ## only 1
+print "\nFourth person removed with no data:", no_data
+df = df.drop(no_data)
+
+## this would remove all people with no total payments and no total stock value (2 more than necessary)
+'''
 no_data = df[np.isnan(df.total_payments) & np.isnan(df.total_stock_value)].index.values.tolist()
 print "\nPeople with no data removed from dataset: ", no_data, "\n"
-
 for person in no_data:
-    df.drop(person)
-    
-## from looking at the enron insider pay pdf file
-df.drop('THE TRAVEL AGENCY IN THE PARK')
+    df = df.drop(person)
+    #data_dict.pop(person)
+'''
 
 
-### Convert DF Back to Dictionary
+### Convert DataFrame Back to Dictionary
 df = df.replace(np.nan, 'NaN') ## convert np.nan back to 'NaN' for 'add_words' in Task 3
 #data_dict = df.to_dict(orient = 'index') ## this doesn't work, 'index' is deprecated?
 df = df.transpose()
 data_dict = df.to_dict()
 
 
+### Inspect Test/Train Split
+data = featureFormat(data_dict, features_list, sort_keys = True)
+labels, features = targetFeatureSplit(data)
+from sklearn.cross_validation import train_test_split
+features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.3, random_state=42)
+print "\n", len(labels_train), "total people in the TRAINING set with", sum(labels_train), "POIs at", 100.0*sum(labels_train)/len(labels_train), "percent."
+print len(labels_test), "total people in the TEST set with", sum(labels_test), "POIs at", 100.0*sum(labels_test)/len(labels_test), "percent."
 
 
 
 
 
-### Task 3: Create new feature(s)
+
+
+### Task 3: Feature Engineering and Feature Selection
+
+### Prune Financial Features based upon Data Exploration (# of POIs and missing data)
+
+df = df.transpose()[features_list] ## using same dataframe from the outlier removal section
+df = df.replace('NaN', np.nan)
+
+## creating list of important features by number of non-null values
+feature_data = []
+alpha = 1.0* sum(df.poi != True) / sum(df.poi == True) ## weighting POIs by their proportion in the data set
+
+for ftr in list(df.columns.values):
+    if ftr not in ['poi']:
+        n_poi = sum( df[df.poi == True][ftr].notnull() )
+        n_non_poi = sum( df[df.poi != True][ftr].notnull() )
+        feature_data.append([ftr, (alpha*n_poi + n_non_poi)])
+        
+feature_data = sorted(feature_data, key=lambda x: x[1], reverse = True)
+new_features = [ftr[0] for ftr in feature_data[0:8]] ## top 8
+features_list = ['poi'] + new_features ## take top 8 and add back POI
+
+## remove new people with no data in updated features
+no_data = df[df[new_features].isnull().all(axis = 1)].index.values
+no_data = ''.join(no_data) ## only 1
+data_dict.pop(no_data)
+    
+print "\n\n\nTop 8 features with most data:", new_features ## exclude POI in the printed list
+print "\nExcluding these features because of limited data:", [ftr for ftr in list(df.columns.values) if ftr not in features_list]
+print "\nRemoved 1 additional person with no data in new features:", no_data, "\n\n\n"
+
+
 
 ### Creating Suspicious Words Features
 
 ## adding email text data for each person
 from add_email_words import add_words ## adds all email text data as one string for each person in data_dict[person]['words']
-data_dict = add_words(data_dict, all=False, n=20) ## 'all' to process entire email corpus, n is number of emails per person, default is 30
+print "Processing emails...\n"
+data_dict = add_words(data_dict, all=False, n=100) ## 'all' to process entire email corpus, n is number of emails per person, default is 30
 
 ## getting list of suspicious words
 from get_important_words import get_words
+print "\nGetting important words..."
 impt_words = get_words(data_dict)
-if u'boardroom' not in impt_words: ## have to add 1 critically important word manually, the DT classifier doesn't always find it for some reason...?
-    impt_words.append(u'boardroom')
+# UNCOMMENT BELOW WITH ACCESS TO FULL EMAIL CORPUS
+'''if u'boardroom' not in impt_words: ## have to add 1 critically important word manually, the DT classifier doesn't always find it for some reason...?
+    #impt_words.append(u'boardroom')'''
     
-print "Suspicious words are: ", impt_words
+print "\nSuspicious words are:", impt_words
 
 ## add count of each suspicious word for all persons to dictionary in data_dict[person]['a_suspicious_word_here']
 from add_word_count import add_count
+print "\nAdding suspicious word counts..."
 data_dict = add_count(data_dict, impt_words)
 
 ## removing 'word' feature from data_dict, no longer needed
@@ -137,68 +197,30 @@ for person in data_dict:
         if num > 0:
             print poi, person, word, num 
 '''
+## rename
+word_features = impt_words
 
-word_features = impt_words ## rename
-
-
-
-
-
+## add to word features to feature list
+features_list += word_features
 
 
-### Task 3.1: Selecting Best Features
-# THIS IS IMPLEMENTED HERE AS IT CANNOT BE DONE IN A PIPELINE
 
-### Pruning financial features list based upon those with most data, word features not included here as they have data for all persons
-df = df.transpose()[features_list] ## using same pandas data frame from the outlier removal section
-df = df.replace('NaN', np.nan)
+### Selecting Best Features (THIS IS IMPLEMENTED HERE AS IT CANNOT BE DONE IN A PIPELINE)
 
-## non-null counts for POIs
-print "\n", df[df.poi == True].info()
-
-## creating list of important features by number of non-null values
-feature_data = []
-alpha = 1.0* sum(df.poi != True) / sum(df.poi == True) ## weighting POIs by their proportion in the data set
-
-for ftr in list(df.columns.values):
-    if ftr not in ['poi']:
-        n_poi = sum( df[df.poi == True][ftr].notnull() )
-        n_non_poi = sum( df[df.poi != True][ftr].notnull() )
-        feature_data.append([ftr, (alpha*n_poi + n_non_poi)])
-        
-feature_data = sorted(feature_data, key=lambda x: x[1], reverse = True)
-features_list = [ftr[0] for ftr in feature_data[0:8]] + ['poi'] ## take top 8 and add back POI
-    
-print "\nTop 8 features to include with most data: ", features_list[:-1] ## exclude POI in the printed list
-print "Excluding these features because of limited data: ", [ftr for ftr in list(df.columns.values) if ftr not in features_list]
-
-
-### Adding word features after financial feature pruning
-features_list = features_list + word_features
-
-
-### Selecting best features based upon several selection methods
 from feature_selector import select_best
-updated_features = select_best(data_dict, features_list, 5)
+print "\n\n\nGetting best features..."
+best_features = select_best(data_dict, features_list, 6)
 
-
-### Manual pruning from worst correlated features and rankings.  Also adding u'boardroom feature,
-## even if word classifier finds it, it doesn't always get included by select_best when other text features are present (u'raptor for example) 
-if 'expenses' in updated_features:
-    updated_features.remove('expenses')
-if 'salary' in updated_features:
-    updated_features.remove('salary')
-if 'total_payments' in updated_features:
-    updated_features.remove('total_payments')
-if u'boardroom' not in updated_features:
-    updated_features.append(u'boardroom')
-
-print "\nFinal Features Used: ", updated_features, "\n"
+final_features = best_features
+## the best 6 aren't always the same here, input manually to be sure
+# UNCOMMENT BELOW WITH ACCESS TO FULL EMAIL CORPUS
+#final_features = ['total_stock_value', u'boardroom', 'bonus', u'blown', 'exercised_stock_options', 'restricted_stock'] #, 'salary']
+print "\nFinal Features Used: ", final_features, "\n"
 
 
 ### Store to my_dataset for easy export below.
 my_dataset = data_dict
-features_list = ['poi'] + updated_features
+features_list = ['poi'] + final_features
 
 
 ### Extract features and labels from dataset for local testing
@@ -244,7 +266,7 @@ clf = Pipeline(estimators)
 
 
 ### Parameter Optimization
-from sklearn.cross_validation import train_test_split
+#from sklearn.cross_validation import train_test_split
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import StratifiedShuffleSplit
 

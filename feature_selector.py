@@ -210,7 +210,7 @@ def select_best(data_dict, features_list, n = 10):
         total_rank = sorted(total_rank.items(), key = lambda x: x[1], reverse = True)
         print "\nTotal rank of all features from all selection methods: ", total_rank
         keepers = [ft[0] for ft in total_rank[:n]]
-        print "Best", n, "features from all selection methods: ", keepers
+        print "Top", n, "features from all selection methods: ", keepers
         
         
         return keepers

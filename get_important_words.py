@@ -56,10 +56,10 @@ def get_words(data_dict):
 	ft_imp = clf.feature_importances_.tolist() ## a vector of numerical importance for each feature/word
 	most_imp = [] ## a list of pairs of numerical importance value and respective index (within 'ft_imp')
 	for f in ft_imp:
-		if f > 0.20: ## anything at all important is greater than 0, but 0.2 seems to be a good threshold (same as used in lesson on feature selection in find_signature.py)
+		if f > 0.2: ## anything at all important is greater than 0, but 0.2 seems to be a good threshold (same as used in lesson on feature selection in find_signature.py)
 			most_imp.append((f,ft_imp.index(f)))
 
-	print "Number of important/suspicious words: ", len(most_imp)
+	print "\nNumber of important/suspicious words: ", len(most_imp)
 
 	ftrs_list = vectorizer.get_feature_names()  ## a list of all features/words
 	#print len(ftrs_list), len(ft_imp), most_imp ## double check our array lengths and indices
