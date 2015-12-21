@@ -164,7 +164,7 @@ def add_words(data_dict, all=False, n=30):
                                                 
                                                 start_idx = email_path.find('/') ## email paths are not correct as is
                                                 # note the path below is different for the GitHub project folder; '../../' for local or '../' for GitHub
-                                                actual_email_path = '../' + email_path[start_idx + 1: -2] ## -2 because we have a period on the end of the file name
+                                                actual_email_path = '../../' + email_path[start_idx + 1: -2] ## -2 because we have a period on the end of the file name
                                                 
                                                 if email_limit_counter < n: ## the limit of how many emails to process per person
                                                         

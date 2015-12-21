@@ -3,7 +3,7 @@
 
 import sys
 import pickle
-sys.path.append("./tools/") # DIFFERENT GITHUB PATH HERE
+sys.path.append("../tools/") # DIFFERENT GITHUB PATH HERE
 
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
