@@ -209,10 +209,10 @@ features_list += word_features
 
 from feature_selector import select_best
 print "\n\n\nGetting best features..."
-best_features = select_best(data_dict, features_list, 6)
+best_features = select_best(data_dict, features_list, 7)
 
 final_features = best_features
-## the best 6 aren't always the same here, input manually to be sure
+## the best 7 aren't always the same here, input manually to be sure
 # UNCOMMENT BELOW WITH ACCESS TO FULL EMAIL CORPUS
 #final_features = ['total_stock_value', u'boardroom', 'bonus', u'blown', 'exercised_stock_options', 'restricted_stock'] #, 'salary']
 print "\nFinal Features Used: ", final_features, "\n"
