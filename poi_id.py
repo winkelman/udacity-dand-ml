@@ -214,7 +214,7 @@ best_features = select_best(data_dict, features_list, 6)
 final_features = best_features
 ## the best 6 aren't always the same here, input manually to be sure
 # UNCOMMENT BELOW WITH ACCESS TO FULL EMAIL CORPUS IF FINAL FEATURES DO NOT MATCH
-#final_features = ['total_stock_value', u'boardroom', 'bonus', u'blown', 'exercised_stock_options', 'restricted_stock'] #, 'salary']
+final_features = ['total_stock_value', u'boardroom', 'bonus', u'blown', 'exercised_stock_options', 'restricted_stock'] #, 'salary']
 print "\nFinal Features Used: ", final_features, "\n"
 
 
