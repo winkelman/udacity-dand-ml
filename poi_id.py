@@ -174,8 +174,8 @@ from get_important_words import get_words
 print "\nGetting important words..."
 impt_words = get_words(data_dict)
 # UNCOMMENT BELOW WITH ACCESS TO FULL EMAIL CORPUS
-'''if u'boardroom' not in impt_words: ## have to add 1 critically important word manually, the DT classifier doesn't always find it for some reason...?
-    #impt_words.append(u'boardroom')'''
+if u'boardroom' not in impt_words: ## have to add 1 critically important word manually, the DT classifier doesn't always find it for some reason...?
+    impt_words.append(u'boardroom')
     
 print "\nSuspicious words are:", impt_words
 
