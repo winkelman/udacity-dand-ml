@@ -41,6 +41,25 @@ data_dict = pickle.load(open("final_project_dataset.pkl", "r") )
 
 
 
+###--- THIS CODE BLOCK WAS USED THROUGHOUT THE SCRIPT IN DIFFERENT LOCATIONS TO GENERATE MODEL SCORES AT DIFFERENT POINTS ---###
+'''
+data = featureFormat(data_dict, features_list, sort_keys = True)
+labels, features = targetFeatureSplit(data)
+from sklearn.cross_validation import train_test_split
+features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.3, random_state=42)
+from sklearn.naive_bayes import GaussianNB
+clf = GaussianNB()
+clf.fit(features_train, labels_train)
+dump_classifier_and_data(clf, data_dict, features_list)
+'''
+###--- IF USED COMMENT OUT ALL CODE FOLLOWING THIS BLOCK ---###
+
+
+
+
+
+
+
 ### Task 2: Data Exploration and Outlier Removal (not enough data for 10% rule)
 
 ### Create Pandas Dataframe
@@ -100,13 +119,11 @@ print "\nFourth person removed with no data:", no_data
 df = df.drop(no_data)
 
 ## this would remove all people with no total payments and no total stock value (2 more than necessary)
-'''
-no_data = df[np.isnan(df.total_payments) & np.isnan(df.total_stock_value)].index.values.tolist()
-print "\nPeople with no data removed from dataset: ", no_data, "\n"
-for person in no_data:
-    df = df.drop(person)
-    #data_dict.pop(person)
-'''
+#no_data = df[np.isnan(df.total_payments) & np.isnan(df.total_stock_value)].index.values.tolist()
+#print "\nPeople with no data removed from dataset: ", no_data, "\n"
+#for person in no_data:
+#    df = df.drop(person)
+#    #data_dict.pop(person)
 
 
 ### Convert DataFrame Back to Dictionary
@@ -188,15 +205,6 @@ data_dict = add_count(data_dict, impt_words)
 for person in data_dict:
     data_dict[person].pop("words")
 
-## inspecting suspicious words count for POIs
-'''
-for person in data_dict:
-    poi = data_dict[person]['poi']
-    for word in impt_words:
-        num = data_dict[person][word]
-        if num > 0:
-            print poi, person, word, num 
-'''
 ## rename
 word_features = impt_words
 
@@ -256,8 +264,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.decomposition import PCA
 
-#estimators = [('scaler', StandardScaler()), ('reducer', PCA()), ('ada', AdaBoostClassifier())]  ## standard scaling and PCA vastly improve AdaBoost
-estimators = [('scaler', MinMaxScaler()), ('knn',  KNeighborsClassifier())] ## KNN requires range scaling but PCA offers no benefit
+estimators = [('scaler', StandardScaler()), ('reducer', PCA()), ('ada', AdaBoostClassifier())]  ## standard scaling and PCA vastly improve AdaBoost
+#estimators = [('scaler', MinMaxScaler()), ('knn',  KNeighborsClassifier())] ## KNN requires range scaling but PCA offers no benefit
 
 
 ### Classifier Selection
@@ -274,10 +282,10 @@ features_train, features_test, labels_train, labels_test = \
     train_test_split(features, labels, test_size=0.3, random_state=42)
 
 ## standard scaler, pca, adaboost
-'''parameters = dict(ada__base_estimator = [DecisionTreeClassifier(), DecisionTreeClassifier(max_depth = 5), DecisionTreeClassifier(max_depth = 8)],
-                ada__learning_rate = [1.0, 5.0, 10.0, 20.0])'''
+parameters = dict(ada__base_estimator = [DecisionTreeClassifier(), DecisionTreeClassifier(max_depth = 5), DecisionTreeClassifier(max_depth = 8)],
+                ada__learning_rate = [1.0, 5.0, 10.0, 20.0])
 ## min-max scaler, knn
-parameters = dict(knn__n_neighbors = range(1, 6), knn__weights = ['uniform', 'distance'])
+#parameters = dict(knn__n_neighbors = range(1, 6), knn__weights = ['uniform', 'distance'])
 
 sss = StratifiedShuffleSplit(labels_train, random_state = 11) ## best cross-validation method for small data set and few POIs
 clf = GridSearchCV(clf, param_grid = parameters, scoring = 'recall', cv = sss, verbose = 1)  ## maximizing the f1 score, recall results in same
