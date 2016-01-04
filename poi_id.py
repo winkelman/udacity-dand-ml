@@ -283,7 +283,7 @@ features_train, features_test, labels_train, labels_test = \
 
 ## standard scaler, pca, adaboost
 parameters = dict(ada__base_estimator = [DecisionTreeClassifier(), DecisionTreeClassifier(max_depth = 5), DecisionTreeClassifier(max_depth = 8)],
-                ada__learning_rate = [1.0, 5.0, 10.0, 20.0])
+                ada__learning_rate = [5.0, 10.0, 20.0])
 ## min-max scaler, knn
 #parameters = dict(knn__n_neighbors = range(1, 6), knn__weights = ['uniform', 'distance'])
 
