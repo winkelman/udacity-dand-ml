@@ -3,11 +3,11 @@ S'poi'
 p1
 aS'total_stock_value'
 p2
-aS'bonus'
+aVboardroom
 p3
-aS'expenses'
+aS'bonus'
 p4
-aS'salary'
+aVblown
 p5
 aS'exercised_stock_options'
 p6
