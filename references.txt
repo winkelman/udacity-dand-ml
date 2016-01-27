@@ -26,14 +26,3 @@ http://stackoverflow.com/questions/5486337/how-to-remove-stop-words-using-nltk-o
 
 http://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_fscore_support.html
 
-
-
-# All POI data...
-
-poi_vals = set()
-for person in enron_data:
-    poi_val = enron_data[person]['poi']
-    poi_vals.add(poi_val)
-print poi_vals
-
-
