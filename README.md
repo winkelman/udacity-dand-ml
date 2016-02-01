@@ -7,4 +7,4 @@ If you wish to recreate the model building process as well as model validation, 
 
 To see a demo without unpacking the full email corpus, you can copy the `demo` branch of my repository and run `poi_id.py`.  It has a fraction of the email corpus and the evaluation scores will be different from those in the final report.
 
-A pdf of the project report can be found above as well as a simulated output of the results in 'jupyter_notebook.ipynb'
+A PDF of the project report can be found above as well as a simulated output of the results in `jupyter_notebook.ipynb`
