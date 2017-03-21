@@ -39,6 +39,8 @@ def add_email_paths(enron_data):
                     # remove newline character at end of path
                     file_path = file_path[idx: -1]
                     enron_data[person]['paths'].append(file_path)
+        # email address no longer needed
+        enron_data[person].pop('email_address')
 
     return enron_data
 
@@ -68,14 +70,21 @@ def create_corpora(enron_data):
     return enron_data
 
 
-if __name__ == '__main__':
-    pass
-    '''
-    enron_data = pickle.load(open("final_project_dataset.pkl", "r"))
+def build_email_dataset(enron_data):
     # time to build corpus
     start_time = time.time()
     corpus_data = create_corpora(add_email_paths(enron_data))
     elapsed_time = time.time() - start_time
     print "time to build corpus: {} minutes".format(round(elapsed_time/60.0, 2))
-    pickle.dump(corpus_data, open("corpus_dataset.pkl", "w"))
+    # export file
+    with open("emails_dataset.pkl", "w") as f_out:
+        pickle.dump(corpus_data, f_out)
+
+
+if __name__ == '__main__':
+    pass
+    '''
+    with open("final_project_dataset.pkl", "r") as f_in:
+        enron_data = pickle.load(f_in)
+    build_emails_dataset(enron_data)
     '''
