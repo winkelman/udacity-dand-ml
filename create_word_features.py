@@ -1,32 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import numpy as np
 import pickle
 import pprint
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.ensemble import RandomForestClassifier
-#from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import f1_score
 
 
 def get_words(enron_data):
 	"""get words associated with positive labels.
 	fits tfidf on topic text for all persons in data set.
-	grid search using random forest and cross validation
-	to get best estimator and best vocab."""
+	random forest with cross validation to get best vocab."""
 
-	'''
-	# try pandas/numpy arrays
-	df = pd.DataFrame.from_dict(data_dict, orient = 'index')
-    df = df.replace('NaN', np.nan)
-    # OR?
-    #df = df.replace('NaN', 0)
-    labels = df.poi.values
-    features = df.loc[:, df.columns != 'poi'].values
-    '''
-
+	# only persons with topic data
 	features = []
 	labels = []
 	for person in enron_data:
@@ -38,24 +28,30 @@ def get_words(enron_data):
 	tfidf = TfidfVectorizer(sublinear_tf=True,
 							max_features=40, # vocab limit for all persons (40)
 							max_df=0.20) # (.20)
-	transformed_features = tfidf.fit_transform(features).toarray()
+	transformed_features = tfidf.fit_transform(features).toarray() # [num_obs x vocab]
 	vocab = tfidf.get_feature_names()
-	# stratified split, equal class ratio
-	sss = StratifiedShuffleSplit(n_splits=10, test_size=0.30)
-	# optimize for precision and recall
-	# RF or DT?
-	rf = RandomForestClassifier()
-	clf = GridSearchCV(rf, {'n_estimators': [10000]}, scoring='f1', cv=sss)
-	#dt = DecisionTreeClassifier()
-	#clf = GridSearchCV(dt, {'max_depth': [10]}, scoring='f1', cv=sss)
-	clf.fit(transformed_features, labels)
-	#print clf.best_score_
-	# best classifier
-	clf = clf.best_estimator_
-	# get top 10 vocab
-	feature_idx = clf.feature_importances_.argsort()[::-1].tolist()[0:10]
+	# need array for multiple indexing
+	labels = np.array(labels)
+	num_splits = 10 # iterations for cv
+	#scores = np.zeros(len(vocab)) # empty array if cumulative scores
+	f1 = 0 # initialize f1 score to zero
+	sss = StratifiedShuffleSplit(n_splits=num_splits, test_size=0.30)
+	# not aggregating scores, just vocab from best score
+	for train_idx, test_idx in sss.split(transformed_features, labels):
+		train_feat, train_lab = transformed_features[train_idx], labels[train_idx]
+		test_feat, test_lab = transformed_features[test_idx], labels[test_idx]
+		rf = RandomForestClassifier(n_estimators=30)
+		rf.fit(train_feat, train_lab)
+		#scores += rf.feature_importances_ # add scores
+		pred = rf.predict(test_feat)
+		currrent_f1 = f1_score(test_lab, pred)
+		if currrent_f1 > f1:
+			f1 = currrent_f1
+			scores = rf.feature_importances_
+	#scores /= num_splits # average over splits if cumulative scores
+	# get top 10 vocab for best fit
+	feature_idx = scores.argsort()[::-1].tolist()[0:10]
 	best_words = ([vocab[i] for i in feature_idx])
-	#print best_words
 	return best_words
 
 
@@ -83,7 +79,8 @@ if __name__ == '__main__':
 	pass
 	'''
 	with open("topic_dataset.pkl", "r") as f_in:
-    	enron_data = pickle.load(f_in)
-	build_word_dataset(enron_data)
+		enron_data = pickle.load(f_in)
+	print get_words(enron_data)
+	#build_word_dataset(enron_data)
 	#pprint.pprint(word_feature_data)
 	'''
