@@ -14,31 +14,29 @@ file_list = os.listdir(paths_dir)
 
 def add_email_paths(enron_data):
     """add email path info for to and from all persons."""
-    for person in enron_data:
-        # make sure have data
-        persons_with_data = has_email_data(enron_data, print_out=False)
-        if person in persons_with_data:
-            # make paths key
-            enron_data[person]['paths'] = []
-            email_address = enron_data[person]['email_address']
-            # from this person
-            file_name = "from_" + email_address + ".txt"
-            with open(paths_dir + '/' + file_name) as f_in:
-                for file_path in f_in:
-                    # remove first part of path, irrelevant
-                    idx = file_path.find(r'/')
-                    # remove newline character at end of path
-                    file_path = file_path[idx: -1]
-                    enron_data[person]['paths'].append(file_path)
-            # to this person
-            file_name = "to_" + email_address + ".txt"
-            with open(paths_dir + '/' + file_name) as f_in:
-                for file_path in f_in:
-                    # remove first part of path, irrelevant
-                    idx = file_path.find(r'/')
-                    # remove newline character at end of path
-                    file_path = file_path[idx: -1]
-                    enron_data[person]['paths'].append(file_path)
+    persons_with_data = has_email_data(enron_data, print_out=False)
+
+    for person in persons_with_data:
+        enron_data[person]['paths'] = []
+        email_address = enron_data[person]['email_address']
+        # from this person
+        file_name = "from_" + email_address + ".txt"
+        with open(paths_dir + '/' + file_name) as f_in:
+            for file_path in f_in:
+                # remove first part of path, irrelevant
+                idx = file_path.find(r'/')
+                # remove newline character at end of path
+                file_path = file_path[idx: -1]
+                enron_data[person]['paths'].append(file_path)
+        # to this person
+        file_name = "to_" + email_address + ".txt"
+        with open(paths_dir + '/' + file_name) as f_in:
+            for file_path in f_in:
+                # remove first part of path, irrelevant
+                idx = file_path.find(r'/')
+                # remove newline character at end of path
+                file_path = file_path[idx: -1]
+                enron_data[person]['paths'].append(file_path)
         # email address no longer needed
         enron_data[person].pop('email_address')
 

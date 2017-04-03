@@ -19,7 +19,7 @@ def get_feature_scores(enron_data):
     # classifiers can't handle np.nan
     df = df.replace('NaN', 0)
     labels = df.poi.values
-    features = df[df.columns.difference(['poi', 'email_address'])] # remove 'email_address' after build emails
+    features = df[df.columns.difference(['poi', 'email_address'])]
     # get names first
     var_names = features.columns.tolist()
     features = features.values

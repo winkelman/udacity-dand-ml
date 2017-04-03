@@ -68,7 +68,7 @@ if __name__ == '__main__':
 	pass
 	'''
 	with open("final_project_dataset.pkl", "r") as f_in:
-    	enron_data = pickle.load(f_in)
+		enron_data = pickle.load(f_in)
 	has_email_data(enron_data)
 	validate_from_email_counts(enron_data)
 	'''

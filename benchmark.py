@@ -10,7 +10,7 @@ from sklearn.naive_bayes import GaussianNB
 
 
 def benchmark_score(enron_data, features_list):
-	# email address in features before email corpus data set, REMOVE AFTER RERUN
+	# email address in features before email corpus data set
 	if 'email_address' in features_list:
 		features_list.remove('email_address')
 	# 'poi' is first in list for test_classifier
